@@ -1,11 +1,8 @@
 
-⸻
-
 
 # Midi Structure Classifier & Style-Aware MIDI Generator (Wake-Sleep)
 
 A research prototype for **structure-aware music modeling**, combining:
-
 1. A **token-level MIDI style classifier** (`A/B/C/D`)
 2. A **generative LM** fine-tuned in a **wake–sleep loop** using style prompts inferred by the frozen classifier.
 
@@ -15,6 +12,7 @@ A research prototype for **structure-aware music modeling**, combining:
 
 ## 📁 Repository Layout
 
+```
 .
 ├─ aria_generative/model.py     # Transformer blocks (LM / conditional / classifier heads)
 ├─ datamodule.py                # Lightning DataModules for synthetic + real MIDI
@@ -25,6 +23,7 @@ A research prototype for **structure-aware music modeling**, combining:
 ├─ utils.py                     # Prompt builders, parallel I/O, style helpers
 ├─ wake_pl.py                   # Training entrypoint
 └─ train_ws_new.sh              # SLURM launcher
+```
 
 ---
 
@@ -43,11 +42,13 @@ A research prototype for **structure-aware music modeling**, combining:
 
 ## 🗂️ Data Layout
 
-datasets//
-├─ midi/.mid
-└─ style/.txt      # per-MIDI A/B/C/D labels
+```
+datasets/<dataset>/
+├─ midi/*.mid
+└─ style/*.txt      # per-MIDI A/B/C/D labels
 
-datasets//data/**/*.mid
+datasets/<dataset>/data/**/*.mid
+```
 
 Data is cached under `./cache`.
 
@@ -59,53 +60,58 @@ Tested with **Python ≥ 3.10** and **CUDA GPUs**.
 
 ```bash
 pip install torch pytorch-lightning transformers wandb tqdm numpy
+```
 
 Additional internal deps:
-	•	ariautils / aria — provides AbsTokenizer, MidiDict
-	•	sageattention — custom attention kernel
+- `ariautils` / `aria` — provides AbsTokenizer, MidiDict
+- `sageattention` — custom attention kernel
 
-⸻
+---
 
-🚀 Quickstart
+## 🚀 Quickstart
 
-Single machine:
-
+### Single machine:
+```bash
 python wake_pl.py \
   --data_dir datasets/aria-midi-cycle1/data \
   --devices 1 --num_nodes 1 \
   --file_limit 5000 --max_seq_len 3820 \
   --wandb_mode disabled
+```
 
-Multi-node (SLURM):
-
+### Multi-node (SLURM):
+```bash
 sbatch train_ws_new.sh
+```
 
-Train classifier (optional):
-Use MidiClassifierModel.py + SyntheticMidiDataModule from datamodule.py.
+### Train classifier (optional):
+Use `MidiClassifierModel.py` + `SyntheticMidiDataModule` from `datamodule.py`.
 
-⸻
+---
 
-🧩 Core Modules
+## 🧩 Core Modules
 
-Component	File	Purpose
-Tokenizer	tokenizer.py	Adds structural tokens + helpers
-Classifier	MidiClassifierModel.py	Per-token A–D style prediction
-Generator	PLGeneratorDM.py, aria_generative/model.py	LM fine-tuning via inferred prompts
-Data	datamodule.py, dataset.py	Load, augment, and cache MIDI datasets
-Utils	utils.py	Prompt construction, style extraction, I/O helpers
+| Component | File | Purpose |
+|-----------|------|---------|
+| Tokenizer | `tokenizer.py` | Adds structural tokens + helpers |
+| Classifier | `MidiClassifierModel.py` | Per-token A–D style prediction |
+| Generator | `PLGeneratorDM.py`, `aria_generative/model.py` | LM fine-tuning via inferred prompts |
+| Data | `datamodule.py`, `dataset.py` | Load, augment, and cache MIDI datasets |
+| Utils | `utils.py` | Prompt construction, style extraction, I/O helpers |
 
+---
 
-⸻
+## 📤 Outputs
 
-📤 Outputs
-	•	Checkpoints: ./checkpoints/<run>/
-	•	Logs: WandB (or local)
-	•	CSV summaries: classifier predictions
+- **Checkpoints**: `./checkpoints/<run>/`
+- **Logs**: WandB (or local)
+- **CSV summaries**: classifier predictions
 
-⸻
+---
 
-💻 Example
+## 💻 Example
 
+```python
 from MidiClassifierModel import MidiClassifier
 from tokenizer import MusicTokenizerWithStyle
 import torch
@@ -115,28 +121,4 @@ model = MidiClassifier(vocab_size=tok.vocab_size).eval()
 
 out = model.evaluate_sequence(torch.randint(0, tok.vocab_size, (2,512)))
 print(out['style_tokens'][0][:64])
-
-
-⸻
-
-⚠️ Notes
-	•	Adjust base-weights/ paths in wake_pl.py.
-	•	Remove optional ZClipLightningCallback if missing.
-	•	Requires ariautils + sageattention.
-	•	Long MIDI files truncated to max_len.
-
-⸻
-
-📜 License
-
-TBD
-
-⸻
-
-📖 Citation
-
-If you use this project, please cite appropriately (TBD).
-
----
-
-Would you like me to make a **slightly more academic variant** next (e.g. with an “Abstract”, “Method”, and “Results” section for arXiv or GitHub research visibility)?
+```
